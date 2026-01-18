@@ -5,20 +5,17 @@ from collections import deque
 import json
 import sys
 
-SIM = "pure_brownian"
+SIM = "orbit"
 if len(sys.argv) > 1:
     SIM = sys.argv[1]
 
 
 spawn_timer = 0
 KILL_MARGIN = 5
-SIM_TIME = 0
-pressure_impulse = 0.0
-PRESSURE_WINDOW = 1.0  
-pressure_timer = PRESSURE_WINDOW + 1
 
+FIELD_RES = 20
 
-with open(f"/home/shepad/physics/physics_sim/configs_uniform/{SIM}.json", "r") as f:
+with open(f"/home/shepad/physics/physics_sim/configs_variable/{SIM}.json", "r") as f:
     cfg = json.load(f)
 
 BIGS = cfg["BIGS"]
@@ -32,9 +29,6 @@ AMOUNT_IN_Y = cfg["AMOUNT_IN_Y"]
 
 TEMP = cfg["TEMP"]
 
-FIELD_STRENGTH = cfg["FIELD_STRENGTH"]
-E_FIELD = np.array(cfg["E_FIELD"], dtype=float)
-
 SPAWN_RATE = cfg["SPAWN_RATE"]
 
 MAX_PATH_POINTS = cfg["MAX_PATH_POINTS"]
@@ -47,6 +41,55 @@ PARTICLE_COLISSIONS = cfg["PARTICLE_COLISIONS"] == 1
 
 NEW_BALL_SPAWNS = cfg["NEW_BALL_SPAWNS"] == 1
 AVG_SPAWN_VELO = cfg["AVG_SPAWN_VELO"]
+
+def electric_field(pos, t, cfg):
+    x, y = pos
+    E = cfg["E_FIELD"]
+    p = E["PARAMS"]
+
+    if E["TYPE"] == "uniform":
+        return np.array([p["Ex"], p["Ey"]])
+
+    if E["TYPE"] == "linear":
+        return np.array([p["kx"] * x, -p["ky"] * y])
+
+    if E["TYPE"] == "quadrupole":
+        k = p["k"]
+        return np.array([k * x, -k * y])
+
+    if E["TYPE"] == "oscillating":
+        d = np.array(p["direction"])
+        return p["E0"] * np.cos(p["omega"] * t) * d
+    
+    if E["TYPE"] == "point_charge":
+        r0 = np.array(p["POSITION"], dtype=float)
+        strength = p["STRENGTH"]
+        eps = p.get("SOFTENING", 0.0)
+
+        r = np.array([x, y]) - r0
+        r2 = np.dot(r, r) + eps**2
+
+        return strength * r / (r2 ** 1.5)
+
+    return np.zeros(2)
+
+def magnetic_field(pos, t, cfg):
+    x, y = pos
+    B = cfg["B_FIELD"]
+    p = B["PARAMS"]
+
+    if B["TYPE"] == "uniform":
+        return p["B0"]
+
+    if B["TYPE"] == "gaussian":
+        r2 = x*x + y*y
+        return p["B0"] * np.exp(-r2 / p["sigma"]**2)
+
+    if B["TYPE"] == "gradient":
+        return p["B0"] + p["grad"] * x
+
+    return 0.0
+
 
 
 def kinetic_energy(particles):
@@ -77,7 +120,7 @@ def initialize_new_ball(system):
     speed_mean = AVG_SPAWN_VELO 
     speed_std = 1.0
     vx = np.random.normal(loc=speed_mean, scale=speed_std)
-    vy = np.random.normal(loc=0.0, scale=3.0)
+    vy = np.random.normal(loc=0.0, scale=1.0)
 
     radius = 0.12 * (mass ** (1/3))
     new_particle = Particle(mass, [x, y], [vx, vy], radius)
@@ -106,7 +149,9 @@ class Particle:
 # 
 class ElasticMagneticBoxSystem:
     def __init__(self, Nx=AMOUNT_IN_X, Ny=AMOUNT_IN_Y,
-                 box=(0, 0, 10, 7.5), spacing=0.5):
+                 box=(0, 0, 10, 7.5), spacing=0.5,
+                 time = 0):
+        self.time = time
 
         xs = np.linspace(box[0] + spacing, box[2] - spacing, Nx)
         ys = np.linspace(box[1] + spacing, box[3] - spacing, Ny)
@@ -136,8 +181,13 @@ class ElasticMagneticBoxSystem:
 
     
     def step(self, dt):
-        # magnetic
+        t = self.time
+        
+
         for p in self.particles:
+            E_FIELD = electric_field(p.position, t, cfg)
+            FIELD_STRENGTH = magnetic_field(p.position, t, cfg)
+
             omega = CHARGE * FIELD_STRENGTH / p.mass
             if p.mass == BIG_MASS:
                 omega *= -1
@@ -148,39 +198,31 @@ class ElasticMagneticBoxSystem:
             else:
                 p.velocity -= CHARGE * E_FIELD * dt / p.mass
 
-        # move
+        self.time += dt
         for p in self.particles:
             p.position += p.velocity * dt
-        global pressure_impulse
+
         if WALL_COLISIONS:
             for p in self.particles:
                 if p.position[0] - p.radius < self.xmin:
-                    dp = 2 * p.mass * abs(p.velocity[0])
-                    pressure_impulse += dp
                     p.position[0] = self.xmin + p.radius
                     p.velocity[0] *= -1
 
                 if p.position[0] + p.radius > self.xmax:
-                    dp = 2 * p.mass * abs(p.velocity[0])
-                    pressure_impulse += dp
                     p.position[0] = self.xmax - p.radius
                     p.velocity[0] *= -1
 
                 if p.position[1] - p.radius < self.ymin:
-                    dp = 2 * p.mass * abs(p.velocity[0])
-                    pressure_impulse += dp
                     p.position[1] = self.ymin + p.radius
                     p.velocity[1] *= -1
 
                 if p.position[1] + p.radius > self.ymax:
-                    dp = 2 * p.mass * abs(p.velocity[0])
-                    pressure_impulse += dp
                     p.position[1] = self.ymax - p.radius
                     p.velocity[1] *= -1
 
         if PARTICLE_COLISSIONS:
-            for i in range(self.N):
-                for j in range(i + 1, self.N):
+            for i in range(len(self.particles)):
+                for j in range(i + 1, len(self.particles)):
                     A = self.particles[i]
                     B = self.particles[j]
 
@@ -208,7 +250,7 @@ fig, ax = plt.subplots(figsize=(8, 6))
 ax.set_xlim(system.xmin, system.xmax)
 ax.set_ylim(system.ymin, system.ymax)
 ax.set_aspect('equal')
-ax.set_title("Elastic Brownian Motion with Magnetic Field and Tracers")
+ax.set_title(f"physics sim {SIM}")
 energy_text = ax.text(
     0.02, 0.98, "", transform=ax.transAxes,
     va="top", ha="left", fontsize=10
@@ -230,6 +272,43 @@ for p in system.particles:
     #histories.append([p.position.copy()])  # start with initial position
     histories.append(deque(maxlen=MAX_PATH_POINTS))
 
+
+xs = np.linspace(system.xmin, system.xmax, FIELD_RES)
+ys = np.linspace(system.ymin, system.ymax, FIELD_RES)
+X, Y = np.meshgrid(xs, ys)
+
+Ex = np.zeros_like(X)
+Ey = np.zeros_like(Y)
+
+for i in range(FIELD_RES):
+    for j in range(FIELD_RES):
+        E = electric_field([X[i, j], Y[i, j]], t=0.0, cfg=cfg)
+        Ex[i, j], Ey[i, j] = E
+
+Bz = np.zeros_like(X)
+
+for i in range(FIELD_RES):
+    for j in range(FIELD_RES):
+        Bz[i, j] = magnetic_field([X[i, j], Y[i, j]], t=0.0, cfg=cfg)
+
+
+E_quiver = ax.quiver(
+    X, Y, Ex, Ey,
+    color="green",
+    alpha=0.3,
+    scale=50 # how big are arrows
+)
+
+B_img = ax.imshow(
+    Bz,
+    extent=[system.xmin, system.xmax, system.ymin, system.ymax],
+    origin="lower",
+    cmap="coolwarm",
+    alpha=0.3
+)
+
+
+
 def update(frame):
 
     # remove particles far away for performance
@@ -247,26 +326,11 @@ def update(frame):
         patches.pop(i)
         paths.pop(i)
         histories.pop(i)
+        
 
-    global SIM_TIME
     global spawn_timer
     spawn_timer += STEP
-    SIM_TIME += STEP
-
-    global pressure_impulse, pressure_timer, last_pressure
-
-    pressure_timer += STEP
-
-    if pressure_timer >= PRESSURE_WINDOW:
-        wall_length = 2 * ((system.xmax - system.xmin) +
-                       (system.ymax - system.ymin))
-
-        pressure = pressure_impulse / (pressure_timer * wall_length)
-
-        pressure_impulse = 0.0
-        pressure_timer = 0.0
-        last_pressure = pressure
-
+    
 
     if spawn_timer >= SPAWN_RATE and NEW_BALL_SPAWNS:
         new_particle = initialize_new_ball(system)
@@ -292,8 +356,7 @@ def update(frame):
     P = total_momentum(system.particles)
     energy_text.set_text(
     f"KE = {KE:.2f}\n"
-    f"P = ({P[0]:.2f}, {P[1]:.2f})\n"
-    f"presure = {last_pressure:.3f}"
+    f"P = ({P[0]:.2f}, {P[1]:.2f})"
     )
 
 

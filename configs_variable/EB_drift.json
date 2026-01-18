@@ -1,0 +1,40 @@
+{
+  "BIGS": 30,
+  "STEP": 0.01,
+
+  "BIG_MASS": 6.0,
+  "SMALL_MASS": 1.0,
+
+  "AMOUNT_IN_X": 8,
+  "AMOUNT_IN_Y": 6,
+
+  "TEMP": 1.0,
+
+  "E_FIELD": {
+    "TYPE": "uniform",
+    "PARAMS": {
+      "Ex": 0.0,
+      "Ey": 1.0
+    }
+  },
+
+  "B_FIELD": {
+    "TYPE": "gradient",
+    "PARAMS": {
+      "B0": 1.5,
+      "grad": 0.05
+    }
+  },
+
+  "SPAWN_RATE": 0.0,
+
+  "MAX_PATH_POINTS": 450,
+  "KILL_MARGIN": 5.0,
+
+  "CHARGE": 1.0,
+  "WALL_COLISIONS": 0,
+  "PARTICLE_COLISIONS": 0,
+
+  "NEW_BALL_SPAWNS": 0,
+  "AVG_SPAWN_VELO": 0
+}

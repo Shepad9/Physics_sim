@@ -1,0 +1,27 @@
+{
+  "BIGS": 30,
+  "STEP": 0.01,
+
+  "BIG_MASS": 5.0,
+  "SMALL_MASS": 1.0,
+
+  "AMOUNT_IN_X": 10,
+  "AMOUNT_IN_Y": 8,
+
+  "TEMP": 3.0,
+
+  "FIELD_STRENGTH": 0.0,
+  "E_FIELD": [0.0, 0.0],
+
+  "SPAWN_RATE": 0.0,
+
+  "MAX_PATH_POINTS": 300,
+  "KILL_MARGIN": 5.0,
+
+  "CHARGE": 0.0,
+  "WALL_COLISIONS": 1,
+  "PARTICLE_COLISIONS": 1,
+
+  "NEW_BALL_SPAWNS": 0,
+  "AVG_SPAWN_VELO": 0
+}

@@ -1,0 +1,41 @@
+{
+  "BIGS": 3,
+  "STEP": 0.01,
+
+  "BIG_MASS": 5.0,
+  "SMALL_MASS": 1.0,
+
+  "AMOUNT_IN_X": 3,
+  "AMOUNT_IN_Y": 3,
+
+  "TEMP": 1,
+
+  "E_FIELD": {
+    "TYPE": "uniform",
+    "PARAMS": {
+      "Ex": 0.0,
+      "Ey": 0.0
+    }
+  },
+
+  "B_FIELD": {
+    "TYPE": "gaussian",
+    "PARAMS": {
+      "B0": 2.0,
+      "sigma": 8.0,
+      "COLOR_MAP": "coolwarm"
+    }
+  },
+
+  "SPAWN_RATE": 0.0,
+
+  "MAX_PATH_POINTS": 300,
+  "KILL_MARGIN": 5.0,
+
+  "CHARGE": 1.0,
+  "WALL_COLISIONS": 0,
+  "PARTICLE_COLISIONS": 0,
+
+  "NEW_BALL_SPAWNS": 0,
+  "AVG_SPAWN_VELO": 0
+}
