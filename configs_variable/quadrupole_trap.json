@@ -1,4 +1,5 @@
-{
+{ "X_OFFSET": 0,
+  "Y_OFFSET": 0,
   "BIGS": 30,
   "STEP": 0.01,
 
@@ -34,5 +35,8 @@
   "PARTICLE_COLISIONS": 1,
 
   "NEW_BALL_SPAWNS": 0,
-  "AVG_SPAWN_VELO": 0
+  "AVG_SPAWN_VELO": 0,
+  "STD_NEW_BALL": 0.01,
+
+  "OPPOSITE_CHARGE": 0
 }

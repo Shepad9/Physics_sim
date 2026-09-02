@@ -1,0 +1,46 @@
+{
+  "BIGS": 0,
+  "STEP": 0.01,
+
+  "BIG_MASS": 6.0,
+  "SMALL_MASS": 1.0,
+
+  "AMOUNT_IN_X": 1,
+  "AMOUNT_IN_Y": 1,
+
+  "TEMP": 1.2,
+
+  "E_FIELD": {
+    "TYPE": "cyclotron",
+    "PARAMS": {
+      "Ex": 3.2,
+      "Ey": 0,
+      "xmin": 13,
+      "xmax": 15
+    }
+  },
+
+  "B_FIELD": {
+    "TYPE": "uniform",
+    "PARAMS": {
+      "B0": 1.6
+    }
+  },
+
+  "SPAWN_RATE": 0.0,
+
+  "MAX_PATH_POINTS": 50000,
+  "KILL_MARGIN": 5.0,
+
+  "CHARGE": 1.0,
+  "WALL_COLISIONS": 0,
+  "PARTICLE_COLISIONS": 0,
+
+  "NEW_BALL_SPAWNS": 0,
+  "AVG_SPAWN_VELO": 0,
+
+  "BOX": [0, 0, 30, 27],
+  "X_OFFSET": 15.3,
+  "Y_OFFSET": 14
+
+}

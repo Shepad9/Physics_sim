@@ -1,4 +1,5 @@
-{
+{ "X_OFFSET": 0,
+  "Y_OFFSET": 0,
   "BIGS": 1,
   "STEP": 0.002,
 
@@ -36,6 +37,7 @@
   "SPAWN_RATE": 5,
   "NEW_BALL_SPAWNS": 1,
   "AVG_SPAWN_VELO": 1,
+  "STD_NEW_BALL": 0.01,
 
   "MAX_PATH_POINTS": 1200,
   "KILL_MARGIN": 20.0,
@@ -45,5 +47,7 @@
 
   "SELF_CONSISTENT_FIELDS": {
     "ENABLED": 0
-  }
+  },
+
+  "OPPOSITE_CHARGE": 0
 }

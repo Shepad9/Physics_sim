@@ -5,7 +5,7 @@ from collections import deque
 import json
 import sys
 
-SIM = "pure_brownian"
+SIM = "mass_spectrometer"
 if len(sys.argv) > 1:
     SIM = sys.argv[1]
 
@@ -23,6 +23,8 @@ with open(f"/home/shepad/physics/physics_sim/configs_uniform/{SIM}.json", "r") a
 
 BIGS = cfg["BIGS"]
 STEP = cfg["STEP"]
+
+OPPOSITE_CHARGE = cfg["OPPOSITE_CHARGE"] == 1
 
 BIG_MASS = cfg["BIG_MASS"]
 SMALL_MASS = cfg["SMALL_MASS"]
@@ -95,6 +97,11 @@ def rotate_velocity(v, omega_dt):
         s*v[0] + c*v[1]
     ])
 
+def discrete_magnetic(v, dt):
+    lst = np.array(list(v) + [0])
+    lst = np.cross(lst, np.array([0,0,1]))
+    return v + np.array(lst[0], lst[1]) * dt
+
 # 
 class Particle:
     def __init__(self, mass, position, velocity, radius):
@@ -139,10 +146,11 @@ class ElasticMagneticBoxSystem:
         # magnetic
         for p in self.particles:
             omega = CHARGE * FIELD_STRENGTH / p.mass
-            if p.mass == BIG_MASS:
+            if p.mass == BIG_MASS and OPPOSITE_CHARGE:
                 omega *= -1
-            p.velocity = rotate_velocity(p.velocity, omega * dt)
+            p.velocity = rotate_velocity(p.velocity, omega * dt) # boris transform for continous time
             # electric
+            #p.velocity = discrete_magnetic(p.velocity, dt)
             if p.mass == BIG_MASS:
                 p.velocity += CHARGE * E_FIELD * dt / p.mass
             else:

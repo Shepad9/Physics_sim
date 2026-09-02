@@ -18,8 +18,12 @@ FIELD_RES = 20
 with open(f"/home/shepad/physics/physics_sim/configs_variable/{SIM}.json", "r") as f:
     cfg = json.load(f)
 
+X_OFFSET = cfg["X_OFFSET"]
+Y_OFFSET = cfg["Y_OFFSET"]
+
 BIGS = cfg["BIGS"]
 STEP = cfg["STEP"]
+OPPOSITE_CHARGE = cfg["OPPOSITE_CHARGE"] == 1
 
 BIG_MASS = cfg["BIG_MASS"]
 SMALL_MASS = cfg["SMALL_MASS"]
@@ -41,6 +45,7 @@ PARTICLE_COLISSIONS = cfg["PARTICLE_COLISIONS"] == 1
 
 NEW_BALL_SPAWNS = cfg["NEW_BALL_SPAWNS"] == 1
 AVG_SPAWN_VELO = cfg["AVG_SPAWN_VELO"]
+STD_NEW_BALL = cfg["STD_NEW_BALL"]
 
 def electric_field(pos, t, cfg):
     x, y = pos
@@ -70,6 +75,15 @@ def electric_field(pos, t, cfg):
         r2 = np.dot(r, r) + eps**2
 
         return strength * r / (r2 ** 1.5)
+    if E["TYPE"] == "cyclotron":
+        if x > p["X_MIN"] and x < p["X_MAX"] and y <= 3.5:
+            return np.array([ - p["Ex"], p["Ey"]]) 
+        elif x > p["X_MIN"] and x < p["X_MAX"] and y > 3.5:
+            return np.array([ + p["Ex"], p["Ey"]]) 
+        
+        return np.zeros(2)
+        
+
 
     return np.zeros(2)
 
@@ -87,6 +101,11 @@ def magnetic_field(pos, t, cfg):
 
     if B["TYPE"] == "gradient":
         return p["B0"] + p["grad"] * x
+    
+    if B["TYPE"] == "spectrometer":
+        if x > 2:
+            return p["B0"]
+        return 0.0
 
     return 0.0
 
@@ -118,12 +137,12 @@ def initialize_new_ball(system):
 
     # velocity pointing roughly to the right
     speed_mean = AVG_SPAWN_VELO 
-    speed_std = 1.0
+    speed_std = STD_NEW_BALL
     vx = np.random.normal(loc=speed_mean, scale=speed_std)
-    vy = np.random.normal(loc=0.0, scale=1.0)
+    vy = np.random.normal(loc=0.0, scale=0.03)
 
     radius = 0.12 * (mass ** (1/3))
-    new_particle = Particle(mass, [x, y], [vx, vy], radius)
+    new_particle = Particle(mass, [x, 4], [vx, vy], radius)
 
     system.particles.append(new_particle)
     return new_particle
@@ -153,8 +172,8 @@ class ElasticMagneticBoxSystem:
                  time = 0):
         self.time = time
 
-        xs = np.linspace(box[0] + spacing, box[2] - spacing, Nx)
-        ys = np.linspace(box[1] + spacing, box[3] - spacing, Ny)
+        xs = np.linspace(box[0] + X_OFFSET + spacing, box[2] - spacing, Nx)
+        ys = np.linspace(box[1] + Y_OFFSET + spacing, box[3] - spacing, Ny)
         grid = [(x, y) for y in ys for x in xs]
 
         self.xmin, self.ymin, self.xmax, self.ymax = box
@@ -189,7 +208,7 @@ class ElasticMagneticBoxSystem:
             FIELD_STRENGTH = magnetic_field(p.position, t, cfg)
 
             omega = CHARGE * FIELD_STRENGTH / p.mass
-            if p.mass == BIG_MASS:
+            if p.mass == BIG_MASS and OPPOSITE_CHARGE:
                 omega *= -1
             p.velocity = rotate_velocity(p.velocity, omega * dt)
             # electric

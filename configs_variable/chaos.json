@@ -1,12 +1,13 @@
-{
+{ "X_OFFSET": 0,
+  "Y_OFFSET": 0,
   "BIGS": 35,
   "STEP": 0.01,
 
   "BIG_MASS": 5.0,
   "SMALL_MASS": 1.0,
 
-  "AMOUNT_IN_X": 12,
-  "AMOUNT_IN_Y": 10,
+  "AMOUNT_IN_X": 15,
+  "AMOUNT_IN_Y": 12,
 
   "TEMP": 3.0,
 
@@ -36,5 +37,8 @@
   "PARTICLE_COLISIONS": 1,
 
   "NEW_BALL_SPAWNS": 0,
-  "AVG_SPAWN_VELO": 0
+  "AVG_SPAWN_VELO": 0,
+  "STD_NEW_BALL": 0.01,
+
+  "OPPOSITE_CHARGE": 0
 }
